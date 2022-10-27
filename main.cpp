@@ -1,4 +1,6 @@
 #include <iostream>
+#include <ncurses.h>
+
 using namespace std;
 
 wstring tetromino[7];
@@ -62,6 +64,15 @@ void initializeScreen(int nScreenWidth, int nScreenHeight, wchar_t* pScreen)
     for (int i = 0; i < (nScreenWidth * nScreenHeight); i++) pScreen[i] = L' ';
 }
 
+void displayScreen(int nScreenWidth, int nScreenHeight, wchar_t* pScreen, WINDOW* window)
+{
+    for (int x = 0; x < nScreenWidth; x++)
+        for (int y = 0; y < nScreenHeight; y++)
+            mvwaddch(window, y, x, pScreen[y * nScreenWidth + x]);
+
+    wrefresh(window);
+}
+
 int main()
 {
     // Create assets
@@ -108,6 +119,15 @@ int main()
     pScreen = new wchar_t[nScreenWidth * nScreenHeight];
     initializeScreen(nScreenWidth, nScreenHeight, pScreen);
 
+    // Initialize display
+    initscr();
+    refresh();
+
+    int xMax, yMax;
+    getmaxyx(stdscr, yMax, xMax);
+    WINDOW* window = newwin(nScreenHeight, nScreenWidth, 0.5 * (yMax - nScreenHeight), 0.5 * (xMax - nScreenWidth));
+    box(window, 0, 0);
+
     bool bGameOver = false;
 
     while (!bGameOver)
@@ -127,9 +147,11 @@ int main()
             drawPlayingFieldOnScreen(nFieldWidth, nFieldHeight, nScreenWidth, pScreen, pField);
 
             // Display frame
-
+            displayScreen(nScreenWidth, nScreenHeight, pScreen, window);
     }
 
+    // Clean up
+    endwin();
     delete [] pField;
     delete [] pScreen;
 
