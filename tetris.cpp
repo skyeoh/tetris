@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 #include <ncurses.h>
 
 using namespace std;
@@ -13,9 +14,10 @@ int nScreenWidth = 80;              // console screen size x (columns)
 int nScreenHeight = 30;             // console screen size y (rows)
 wchar_t* pScreen = nullptr;
 
-int rotate(int px, int py, int r)
+int rotatePiece(int px, int py, int r)
 {
-    switch (r % 4) {
+    switch (r % 4)
+    {
         case 0: return py * 4 + px;         // 0 degrees
         case 1: return 12 + py - (px * 4);  // 90 degrees
         case 2: return 15 - (py * 4) - px;  // 180 degrees
@@ -31,7 +33,7 @@ bool doesPieceFit(int nTetromino, int nRotation, int nPosX, int nPosY)
         for (int py = 0; py < 4; py++)
         {
                 // Get index into piece
-                int pi = rotate(px, py, nRotation);
+                int pi = rotatePiece(px, py, nRotation);
 
                 // Get index into field
                 int fi = (nPosY + py) * nFieldWidth + (nPosX + px);
@@ -43,6 +45,14 @@ bool doesPieceFit(int nTetromino, int nRotation, int nPosX, int nPosY)
         }
 
     return true;
+}
+
+void drawCurrentPieceOnScreen(int nCurrentPiece, int nCurrentRotation, int nCurrentX, int nCurrentY, int nScreenWidth, wchar_t* pScreen)
+{
+    for (int px = 0; px < 4; px++)
+        for (int py = 0; py < 4; py++)
+            if (tetromino[nCurrentPiece][rotatePiece(px, py, nCurrentRotation)] == L'X')
+                pScreen[(nCurrentY + py + 2) * nScreenWidth + (nCurrentX + px + 2)] = L" ABCDEFG=#"[nCurrentPiece + 1];
 }
 
 void initializePlayingField(int nFieldWidth, int nFieldHeight, unsigned char* pField)
@@ -123,28 +133,56 @@ int main()
     initscr();
     refresh();
 
+    nodelay(stdscr, TRUE);
+    keypad(stdscr, TRUE);
+    noecho();
+
     int xMax, yMax;
     getmaxyx(stdscr, yMax, xMax);
     WINDOW* window = newwin(nScreenHeight, nScreenWidth, 0.5 * (yMax - nScreenHeight), 0.5 * (xMax - nScreenWidth));
-    box(window, 0, 0);
 
+    // Game loop
     bool bGameOver = false;
+
+    int nCurrentPiece = 0;
+    int nCurrentRotation = 0;
+    int nCurrentX = nFieldWidth / 2;
+    int nCurrentY = 0;
+
+    int bKey;
 
     while (!bGameOver)
     {
             // GAME TIMING ====================================================
-
+            this_thread::sleep_for(50ms);
 
             // USER INPUT =====================================================
-
+            bKey = getch();
 
             // GAME LOGIC =====================================================
-
+            switch (bKey)
+            {
+                case KEY_LEFT:
+                    if (doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX - 1, nCurrentY)) nCurrentX--;
+                    break;
+                case KEY_RIGHT:
+                    if (doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX + 1, nCurrentY)) nCurrentX++;
+                    break;
+                case KEY_DOWN:
+                    if (doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY + 1)) nCurrentY++;
+                    break;
+                case KEY_UP:
+                    if (doesPieceFit(nCurrentPiece, nCurrentRotation + 1, nCurrentX, nCurrentY)) nCurrentRotation++;
+                    break;
+            }
 
             // RENDER OUTPUT ==================================================
 
             // Draw field
             drawPlayingFieldOnScreen(nFieldWidth, nFieldHeight, nScreenWidth, pScreen, pField);
+
+            // Draw current piece
+            drawCurrentPieceOnScreen(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY, nScreenWidth, pScreen);
 
             // Display frame
             displayScreen(nScreenWidth, nScreenHeight, pScreen, window);
