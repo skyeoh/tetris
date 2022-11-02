@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdlib>
 #include <thread>
 #include <ncurses.h>
 
@@ -53,6 +54,14 @@ void drawCurrentPieceOnScreen(int nCurrentPiece, int nCurrentRotation, int nCurr
         for (int py = 0; py < 4; py++)
             if (tetromino[nCurrentPiece][rotatePiece(px, py, nCurrentRotation)] == L'X')
                 pScreen[(nCurrentY + py + 2) * nScreenWidth + (nCurrentX + px + 2)] = L" ABCDEFG=#"[nCurrentPiece + 1];
+}
+
+void lockCurrentPieceIntoPlayingField(int nCurrentPiece, int nCurrentRotation, int nCurrentX, int nCurrentY, int nFieldWidth, unsigned char* pField)
+{
+    for (int px = 0; px < 4; px++)
+        for (int py = 0; py < 4; py++)
+            if (tetromino[nCurrentPiece][rotatePiece(px, py, nCurrentRotation)] == L'X')
+                pField[(nCurrentY + py) * nFieldWidth + (nCurrentX + px)] = nCurrentPiece + 1;
 }
 
 void initializePlayingField(int nFieldWidth, int nFieldHeight, unsigned char* pField)
@@ -151,10 +160,17 @@ int main()
 
     int bKey;
 
+    int nSpeed = 20;
+    int nSpeedCounter = 0;
+    bool bForceDown = false;
+
     while (!bGameOver)
     {
             // GAME TIMING ====================================================
             this_thread::sleep_for(50ms);
+
+            nSpeedCounter++;
+            bForceDown = (nSpeedCounter == nSpeed);
 
             // USER INPUT =====================================================
             bKey = getch();
@@ -174,6 +190,32 @@ int main()
                 case KEY_UP:
                     if (doesPieceFit(nCurrentPiece, nCurrentRotation + 1, nCurrentX, nCurrentY)) nCurrentRotation++;
                     break;
+            }
+
+            if (bForceDown)
+            {
+                if (doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY + 1))
+                {
+                    nCurrentY++; // keep falling
+                }
+                else
+                {
+                    // Lock the current piece in the field
+                    lockCurrentPieceIntoPlayingField(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY, nFieldWidth, pField);
+
+                    // Check if we got any lines
+
+                    // Choose the next piece
+                    nCurrentPiece = rand() % 7;
+                    nCurrentRotation = 0;
+                    nCurrentX = nFieldWidth / 2;
+                    nCurrentY = 0;
+
+                    // Piece does not fit - GAME OVER!
+                    bGameOver = !doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY);
+                }
+
+                nSpeedCounter = 0;
             }
 
             // RENDER OUTPUT ==================================================
