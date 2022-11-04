@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <thread>
+#include <vector>
 #include <ncurses.h>
 
 using namespace std;
@@ -92,6 +93,36 @@ void displayScreen(int nScreenWidth, int nScreenHeight, wchar_t* pScreen, WINDOW
     wrefresh(window);
 }
 
+void drawCompletedLinesOnPlayingField(int nCurrentY, int nFieldWidth, int nFieldHeight, unsigned char* pField, vector<int>& vLines)
+{
+    for (int py = 0; py < 4; py++)
+        if (nCurrentY + py < nFieldHeight - 1)
+        {
+            bool bLine = true;
+            for (int px = 1; px < nFieldWidth - 1; px++)
+                bLine &= (pField[(nCurrentY + py) * nFieldWidth + px] != 0);
+
+            if (bLine)
+            {
+                for (int px = 1; px < nFieldWidth - 1; px++)
+                    pField[(nCurrentY + py) * nFieldWidth + px] = 8;
+
+                vLines.push_back(nCurrentY + py);
+            }
+        }
+}
+
+void redrawPlayingFieldAfterRemovingCompletedLines(int nFieldWidth, unsigned char* pField, vector<int> vLines)
+{
+    for (auto &v : vLines)
+        for (int px = 1; px < nFieldWidth - 1; px++)
+        {
+            for (int py = v; py > 0; py--)
+                pField[py * nFieldWidth + px] = pField[(py - 1) * nFieldWidth + px];
+            pField[px] = 0;
+        }
+}
+
 int main()
 {
     // Create assets
@@ -164,6 +195,8 @@ int main()
     int nSpeedCounter = 0;
     bool bForceDown = false;
 
+    vector<int> vLines;
+
     while (!bGameOver)
     {
             // GAME TIMING ====================================================
@@ -204,6 +237,7 @@ int main()
                     lockCurrentPieceIntoPlayingField(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY, nFieldWidth, pField);
 
                     // Check if we got any lines
+                    drawCompletedLinesOnPlayingField(nCurrentY, nFieldWidth, nFieldHeight, pField, vLines);
 
                     // Choose the next piece
                     nCurrentPiece = rand() % 7;
@@ -225,6 +259,17 @@ int main()
 
             // Draw current piece
             drawCurrentPieceOnScreen(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY, nScreenWidth, pScreen);
+
+            // Animate line completion
+            if (!vLines.empty())
+            {
+                // Display frame
+                displayScreen(nScreenWidth, nScreenHeight, pScreen, window);
+                this_thread::sleep_for(400ms);  // delay a bit
+
+                redrawPlayingFieldAfterRemovingCompletedLines(nFieldWidth, pField, vLines);
+                vLines.clear();
+            }
 
             // Display frame
             displayScreen(nScreenWidth, nScreenHeight, pScreen, window);
