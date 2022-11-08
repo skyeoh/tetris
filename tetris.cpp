@@ -189,7 +189,7 @@ int main()
     int nCurrentX = nFieldWidth / 2;
     int nCurrentY = 0;
 
-    int bKey;
+    int nKey;
 
     int nSpeed = 20;
     int nSpeedCounter = 0;
@@ -210,10 +210,10 @@ int main()
             bForceDown = (nSpeedCounter == nSpeed);
 
             // USER INPUT =====================================================
-            bKey = getch();
+            nKey = getch();
 
             // GAME LOGIC =====================================================
-            switch (bKey)
+            switch (nKey)
             {
                 case KEY_LEFT:
                     if (doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX - 1, nCurrentY)) nCurrentX--;
