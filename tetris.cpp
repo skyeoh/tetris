@@ -194,6 +194,10 @@ int main()
     int nSpeed = 20;
     int nSpeedCounter = 0;
     bool bForceDown = false;
+    int nMaxSpeed = 1;
+
+    int nPieceCount = 0;
+    int nPieceCountPerLevel = 5;
 
     vector<int> vLines;
 
@@ -235,6 +239,11 @@ int main()
                 {
                     // Lock the current piece in the field
                     lockCurrentPieceIntoPlayingField(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY, nFieldWidth, pField);
+
+                    nPieceCount++;
+                    if (nSpeed > nMaxSpeed)
+                        if (nPieceCount % nPieceCountPerLevel == 0)
+                            nSpeed--;
 
                     // Check if we got any lines
                     drawCompletedLinesOnPlayingField(nCurrentY, nFieldWidth, nFieldHeight, pField, vLines);
