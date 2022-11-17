@@ -124,13 +124,19 @@ void redrawPlayingFieldAfterRemovingCompletedLines(int nFieldWidth, unsigned cha
         }
 }
 
-void addGameInformationtoScreen(int nFieldWidth, int nScreenWidth, int nScore, int nPieceCount, wchar_t* pScreen)
+void addGameInformationtoScreen(int nFieldWidth, int nScreenWidth, int nScore, int nPieceCount, int nLevel, wchar_t* pScreen)
 {
     // Score
     wchar_t cScore[11];
     swprintf(cScore, 11, L"%-10d", nScore);
     wcsncpy(&pScreen[2 * nScreenWidth + (nFieldWidth + 4)], L"Score:", 6);
     wcsncpy(&pScreen[3 * nScreenWidth + (nFieldWidth + 4)], cScore, 10);
+
+    // Level
+    wchar_t cLevel[3];
+    swprintf(cLevel, 3, L"%-2d", nLevel);
+    wcsncpy(&pScreen[5 * nScreenWidth + (nFieldWidth + 4)], L"Level:", 6);
+    wcsncpy(&pScreen[6 * nScreenWidth + (nFieldWidth + 4)], cLevel, 2);
 }
 
 int main()
@@ -205,6 +211,7 @@ int main()
     int nSpeedCounter = 0;
     bool bForceDown = false;
     int nMaxSpeed = 1;
+    int nLevel = 1;
 
     int nPieceCount = 0;
     int nPieceCountPerLevel = 5;
@@ -256,7 +263,10 @@ int main()
                     nPieceCount++;
                     if (nSpeed > nMaxSpeed)
                         if (nPieceCount % nPieceCountPerLevel == 0)
+                        {
                             nSpeed--;
+                            nLevel++;
+                        }
 
                     // Check if we got any lines
                     drawCompletedLinesOnPlayingField(nCurrentY, nFieldWidth, nFieldHeight, pField, vLines);
@@ -287,7 +297,7 @@ int main()
             drawCurrentPieceOnScreen(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY, nScreenWidth, pScreen);
 
             // Output game information
-            addGameInformationtoScreen(nFieldWidth, nScreenWidth, nScore, nPieceCount, pScreen);
+            addGameInformationtoScreen(nFieldWidth, nScreenWidth, nScore, nPieceCount, nLevel, pScreen);
 
             // Animate line completion
             if (!vLines.empty())
