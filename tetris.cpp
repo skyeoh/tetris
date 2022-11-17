@@ -319,5 +319,10 @@ int main()
     delete [] pField;
     delete [] pScreen;
 
+    // Display final score
+    cout << "Game over!! Score: " << nScore << endl;
+    cout << "Press <Enter> to continue..." << endl;
+    cin.get();
+
     return 0;
 }
