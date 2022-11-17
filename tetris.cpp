@@ -3,6 +3,7 @@
 #include <thread>
 #include <vector>
 #include <ncurses.h>
+#include <wchar.h>
 
 using namespace std;
 
@@ -123,6 +124,15 @@ void redrawPlayingFieldAfterRemovingCompletedLines(int nFieldWidth, unsigned cha
         }
 }
 
+void addGameInformationtoScreen(int nFieldWidth, int nScreenWidth, int nScore, int nPieceCount, wchar_t* pScreen)
+{
+    // Score
+    wchar_t cScore[11];
+    swprintf(cScore, 11, L"%-10d", nScore);
+    wcsncpy(&pScreen[2 * nScreenWidth + (nFieldWidth + 4)], L"Score:", 6);
+    wcsncpy(&pScreen[3 * nScreenWidth + (nFieldWidth + 4)], cScore, 10);
+}
+
 int main()
 {
     // Create assets
@@ -199,6 +209,8 @@ int main()
     int nPieceCount = 0;
     int nPieceCountPerLevel = 5;
 
+    int nScore = 0;
+
     vector<int> vLines;
 
     while (!bGameOver)
@@ -240,6 +252,7 @@ int main()
                     // Lock the current piece in the field
                     lockCurrentPieceIntoPlayingField(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY, nFieldWidth, pField);
 
+                    // Increase difficulty as game progresses
                     nPieceCount++;
                     if (nSpeed > nMaxSpeed)
                         if (nPieceCount % nPieceCountPerLevel == 0)
@@ -247,6 +260,10 @@ int main()
 
                     // Check if we got any lines
                     drawCompletedLinesOnPlayingField(nCurrentY, nFieldWidth, nFieldHeight, pField, vLines);
+
+                    // Update score
+                    nScore += 25;
+                    if (!vLines.empty()) nScore += (1 << vLines.size()) * 100;
 
                     // Choose the next piece
                     nCurrentPiece = rand() % 7;
@@ -268,6 +285,9 @@ int main()
 
             // Draw current piece
             drawCurrentPieceOnScreen(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY, nScreenWidth, pScreen);
+
+            // Output game information
+            addGameInformationtoScreen(nFieldWidth, nScreenWidth, nScore, nPieceCount, pScreen);
 
             // Animate line completion
             if (!vLines.empty())
